@@ -1,0 +1,11 @@
+[build]
+  command = "npm run functions"
+  
+  functions = "functions"
+
+[dev]
+  
+  functions = "functions"
+
+[template.environment]
+ 
