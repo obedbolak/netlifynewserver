@@ -34,7 +34,7 @@ const getAllProductsController = async (req, res) => {
 // GET TOP PRODUCT
 const getTopProductsController = async (req, res) => {
   try {
-    const products = await productModel.find({}).sort({ rating: -1 }).limit(3);
+    const products = await productModel.find({}).sort({ rating: -1 }).limit(4);
     res.status(200).send({
       success: true,
       message: "Top 3 products",
