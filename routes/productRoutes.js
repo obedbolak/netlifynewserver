@@ -25,7 +25,7 @@ router.get("/get-all", productController.getAllProductsController);
 router.get("/:id", productController.getSingleProductController);
 
 // GET TOP PRODUCTS
-router.get("/top-products", productController.getTopProductsController);
+router.get("/list/top-products", productController.getTopProductsController);
 
 // DELETE PRODUCT
 router.delete(
