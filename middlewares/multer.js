@@ -2,6 +2,6 @@ const multer = require("multer");
 
 const storage = multer.memoryStorage();
 
-const singleUpload = multer({ storage }).single("file");
+const multipleUpload = multer({ storage }).array("files", 10); // Adjust 10 to the max number of files you want to accept
 
-module.exports = { singleUpload };
+module.exports = { multipleUpload };

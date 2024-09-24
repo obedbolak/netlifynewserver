@@ -13,7 +13,7 @@ router.post(
   "/create",
   isAuth,
   isAdmin,
-  singleUpload,
+  multipleUpload,
 
   productController.createProductController
 );

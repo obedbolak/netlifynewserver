@@ -85,25 +85,32 @@ const getSingleProductController = async (req, res) => {
 const createProductController = async (req, res) => {
   try {
     const { name, description, price, category, stock } = req.body;
-    // // validtion
-    // if (!name || !description || !price || !stock) {
-    //   return res.status(500).send({
-    //     success: false,
-    //     message: "Please Provide all fields",
-    //   });
-    // }
-    if (!req.file) {
-      return res.status(500).send({
+
+    // Validation
+    if (!name || !description || !price || !stock) {
+      return res.status(400).send({
         success: false,
-        message: "please provide product images",
+        message: "Please provide all fields",
       });
     }
-    const file = getDataUri(req.file);
-    const cdb = await cloudinary.v2.uploader.upload(file.content);
-    const image = {
-      public_id: cdb.public_id,
-      url: cdb.secure_url,
-    };
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send({
+        success: false,
+        message: "Please provide product images",
+      });
+    }
+
+    const imagePromises = req.files.map(async (file) => {
+      const fileData = getDataUri(file); // Assuming getDataUri is a function that converts the file buffer
+      const cdb = await cloudinary.v2.uploader.upload(fileData.content);
+      return {
+        public_id: cdb.public_id,
+        url: cdb.secure_url,
+      };
+    });
+
+    const images = await Promise.all(imagePromises);
 
     await productModel.create({
       name,
@@ -111,18 +118,18 @@ const createProductController = async (req, res) => {
       price,
       category,
       stock,
-      images: [image],
+      images,
     });
 
     res.status(201).send({
       success: true,
-      message: "product Created Successfully",
+      message: "Product created successfully",
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error In Get single Products API",
+      message: "Error in creating product",
       error,
     });
   }
