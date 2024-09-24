@@ -1,7 +1,7 @@
 const express = require("express");
 const userController = require("../controllers/userController.js");
 const { isAuth } = require("../middlewares/authMiddleware.js");
-const { singleUpload } = require("../middlewares/multer.js");
+const { singleUpload, multipleUpload } = require("../middlewares/multer.js");
 const rateLimit = require("express-rate-limit");
 
 // RATE LIMITER
@@ -35,7 +35,7 @@ router.get("/profile", isAuth, userController.getUserProfileController);
 router.put(
   "/profile",
   isAuth,
-  singleUpload,
+  multipleUpload,
   userController.updateProfileController
 );
 
@@ -43,7 +43,7 @@ router.put(
 router.put(
   "/profile/picture",
   isAuth,
-  singleUpload,
+  multipleUpload,
   userController.updateProfilePicController
 );
 

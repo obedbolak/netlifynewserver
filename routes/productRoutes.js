@@ -58,7 +58,7 @@ router.put(
   "/:id/image",
   isAuth,
   isAdmin,
-  singleUpload,
+  multipleUpload,
   productController.updateProductImageController
 );
 
