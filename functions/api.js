@@ -120,9 +120,36 @@ app.post("/.netlify/functions/api/v1/payment", async (req, res) => {
   const { amount, currency, customerDetails, shippingAddress, billingDetails } =
     req.body;
   try {
+    // Create a new customer in Stripe with both billing and shipping details
+    const customer = await stripe.customers.create({
+      name: customerDetails.name,
+      email: customerDetails.email,
+      phone: customerDetails.phone,
+      shipping: {
+        name: shippingAddress.name,
+        address: {
+          line1: shippingAddress.line1,
+          line2: shippingAddress.line2,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postal_code: shippingAddress.postal_code,
+          country: shippingAddress.country,
+        },
+      },
+      address: {
+        line1: billingDetails.line1,
+        line2: billingDetails.line2,
+        city: billingDetails.city,
+        state: billingDetails.state,
+        postal_code: billingDetails.postal_code,
+        country: billingDetails.country,
+      },
+    });
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
       currency: "usd",
+      customer: customer.id,
       automatic_payment_methods: {
         enabled: true,
       },
