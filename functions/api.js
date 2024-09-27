@@ -50,63 +50,84 @@ app.get("/.netlify/functions/api", (req, res) => {
   res.json({ message: "Hello from the API!" });
 });
 
-app.post("/.netlify/functions/api/create-payment-intent", async (req, res) => {
+app.post("/.netlify/functions/api/v1/payments", async (req, res) => {
   try {
-    const { amount, customer } = req.body;
+    const {
+      amount,
+      currency,
+      customerDetails,
+      shippingAddress,
+      billingDetails,
+    } = req.body;
 
-    if (!amount || !customer || !customer.name || !customer.email) {
-      return res.status(400).json({
-        error: "Amount and customer details are required.",
-      });
-    }
-
-    let stripeCustomer;
-    const doesCustomerExist = await stripe.customers.list({
-      email: customer.email,
+    // Create a new customer in Stripe with both billing and shipping details
+    const customer = await stripe.customers.create({
+      name: customerDetails.name,
+      email: customerDetails.email,
+      phone: customerDetails.phone,
+      shipping: {
+        name: shippingAddress.name,
+        address: {
+          line1: shippingAddress.line1,
+          line2: shippingAddress.line2,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postal_code: shippingAddress.postal_code,
+          country: shippingAddress.country,
+        },
+      },
+      address: {
+        line1: billingDetails.line1,
+        line2: billingDetails.line2,
+        city: billingDetails.city,
+        state: billingDetails.state,
+        postal_code: billingDetails.postal_code,
+        country: billingDetails.country,
+      },
     });
-
-    if (doesCustomerExist.data.length > 0) {
-      stripeCustomer = doesCustomerExist.data[0];
-    } else {
-      const newCustomer = await stripe.customers.create({
-        name: customer.name,
-        email: customer.email,
-      });
-
-      stripeCustomer = newCustomer;
-    }
 
     const ephemeralKey = await stripe.ephemeralKeys.create(
-      { customer: stripeCustomer.id },
-      { apiVersion: "2024-06-20" }
+      { customer: customer.id },
+      { apiVersion: "2022-11-15" }
     );
 
+    // Create a payment intent associated with the customer
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
-      currency: "usd",
-      customer: stripeCustomer.id,
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: "never",
-      },
-      metadata: {
-        customer_name: customer.name,
-        customer_email: customer.email,
-      },
+      amount,
+      currency,
+      customer: customer.id,
+      payment_method_types: ["card"], // Specify payment methods you want to support
     });
 
-    res.json({
-      paymentIntent: paymentIntent.client_secret,
+    // Respond with the client secret of the payment intent
+    res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
       ephemeralKey: ephemeralKey.secret,
-      customer: stripeCustomer.id,
-      publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+      customer: customer.id,
+      publishableKey:
+        "pk_test_51MVgSgKix8j5hIGdHEEVTRTqLeNIKccM1NAypsCpyMkz8y7bkCHCGzmysGkQ3uv6ewR3qiBjEVfWISAsTBRVa5p200QpH2AEe2",
     });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while processing the payment." });
+    console.error("Payment Error:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
+app.post("/.netlify/functions/api/v1/payment", async (req, res) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: req.body.amount,
+      currency: "usd",
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    });
+
+    res.json({ paymentIntent: paymentIntent.client_secret });
+  } catch (e) {
+    res.status(400).json({
+      error: e.message,
+    });
+  }
+});
 module.exports.handler = serverless(app);
