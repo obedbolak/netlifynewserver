@@ -11,7 +11,7 @@ const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const connectDB = require("../config/db.js");
 require("dotenv").config();
-
+const productModel = require("../models/productModel.js");
 // Database connection
 connectDB();
 
@@ -168,6 +168,21 @@ app.post("/.netlify/functions/api/v1/payment", async (req, res) => {
     res.status(400).json({
       error: e.message,
     });
+  }
+});
+
+app.get("/.netlify/functions/api/v1/search", async (req, res) => {
+  const { query } = req.query;
+
+  try {
+    // Find products where the name matches the search query (case-insensitive)
+    const products = await productModel.find({
+      name: { $regex: query, $options: "i" }, // 'i' for case-insensitive
+    });
+
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 module.exports.handler = serverless(app);
