@@ -117,9 +117,11 @@ app.post("/.netlify/functions/api/v1/payments", async (req, res) => {
 });
 
 app.post("/.netlify/functions/api/v1/payment", async (req, res) => {
+  const { amount, currency, customerDetails, shippingAddress, billingDetails } =
+    req.body;
   try {
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: req.body.amount,
+      amount: amount,
       currency: "usd",
       automatic_payment_methods: {
         enabled: true,
