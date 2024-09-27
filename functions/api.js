@@ -145,6 +145,10 @@ app.post("/.netlify/functions/api/v1/payment", async (req, res) => {
         country: billingDetails.country,
       },
     });
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customer.id },
+      { apiVersion: "2024-06-20" } // Specify the desired API version
+    );
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount,
@@ -155,7 +159,11 @@ app.post("/.netlify/functions/api/v1/payment", async (req, res) => {
       },
     });
 
-    res.json({ paymentIntent: paymentIntent.client_secret });
+    res.json({
+      paymentIntent: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: customer.id,
+    });
   } catch (e) {
     res.status(400).json({
       error: e.message,
