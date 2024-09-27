@@ -95,9 +95,14 @@ app.post("/.netlify/functions/api/v1/payments", async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
+      automatic_payment_methods: {
+        enabled: true,
+      },
       customer: customer.id,
       payment_method_types: ["card"], // Specify payment methods you want to support
     });
+
+    res.json({ paymentIntent: paymentIntent.client_secret });
 
     // Respond with the client secret of the payment intent
     res.status(200).json({
