@@ -30,6 +30,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, "product name is required"],
     },
+    uid: {
+      type: String,
+      required: [true, "product name is required"],
+    },
     description: {
       type: String,
       required: [true, "product description is required"],

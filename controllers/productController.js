@@ -84,7 +84,7 @@ const getSingleProductController = async (req, res) => {
 // CREATE PRODUCT
 const createProductController = async (req, res) => {
   try {
-    const { name, description, price, category, stock } = req.body;
+    const { name, description, price, category, stock, uid } = req.body;
 
     // Validation
     if (!name || !description || !price || !stock) {
@@ -118,6 +118,7 @@ const createProductController = async (req, res) => {
       price,
       category,
       stock,
+      uid,
       images,
     });
 
