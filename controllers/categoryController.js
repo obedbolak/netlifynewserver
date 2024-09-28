@@ -115,64 +115,50 @@ const deleteCategoryController = async (req, res) => {
 // UPDATE CATEGORY
 const updateCategoryController = async (req, res) => {
   try {
-    const { categoryId, category } = req.body;
+    // Find category
+    const category = await categoryModel.findById(req.params.id);
 
     // Validation
-    if (!categoryId) {
-      return res.status(400).send({
-        success: false,
-        message: "Please provide the category ID",
-      });
-    }
     if (!category) {
-      return res.status(400).send({
-        success: false,
-        message: "Please provide the category name",
-      });
-    }
-
-    // Find the existing category
-    const existingCategory = await categoryModel.findById(categoryId);
-    if (!existingCategory) {
       return res.status(404).send({
         success: false,
         message: "Category not found",
       });
     }
 
-    // Handle images if provided
-    let images = existingCategory.images; // Keep existing images by default
+    // Get new category
+    const { updatedCategory } = req.body;
 
-    if (req.files && req.files.length > 0) {
-      const imagePromises = req.files.map(async (file) => {
-        const fileData = await getDataUri(file);
-        const cdb = await cloudinary.v2.uploader.upload(fileData.content);
-        return {
-          public_id: cdb.public_id,
-          url: cdb.secure_url,
-        };
-      });
+    // Find products with this category ID
+    const products = await productModel.find({ category: category._id });
 
-      images = await Promise.all(imagePromises);
+    // Update product category
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
+      product.category = updatedCategory;
+      await product.save();
     }
 
-    // Update category
-    await categoryModel.findByIdAndUpdate(
-      categoryId,
-      { category, images },
-      { new: true }
-    );
+    if (updatedCategory) category.category = updatedCategory;
 
-    return res.status(200).send({
+    // Save
+    await category.save();
+    res.status(200).send({
       success: true,
-      message: `${category} category updated successfully`,
+      message: "Category updated successfully",
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).send({
+    console.log(error);
+    if (error.name === "CastError") {
+      return res.status(500).send({
+        success: false,
+        message: "Invalid Id",
+      });
+    }
+    res.status(500).send({
       success: false,
-      message: "Error in Update Category API",
-      error: error.message, // Include error message for debugging
+      message: "Error In UPDATE Category API",
+      error,
     });
   }
 };
