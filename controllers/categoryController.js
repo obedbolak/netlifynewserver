@@ -115,28 +115,35 @@ const deleteCategoryController = async (req, res) => {
 // UPDATE CATEGORY
 const updateCategoryController = async (req, res) => {
   try {
-    // Find category
-    const category = await categoryModel.findById(req.params.id);
+    const { categoryId, category } = req.body;
 
     // Validation
+    if (!categoryId) {
+      return res.status(400).send({
+        success: false,
+        message: "Please provide the category ID",
+      });
+    }
     if (!category) {
+      return res.status(400).send({
+        success: false,
+        message: "Please provide the category name",
+      });
+    }
+
+    // Find the existing category
+    const existingCategory = await categoryModel.findById(categoryId);
+    if (!existingCategory) {
       return res.status(404).send({
         success: false,
         message: "Category not found",
       });
     }
 
-    // Get new category name
-    const { updatedCategory } = req.body;
+    // Handle images if provided
+    let images = existingCategory.images; // Keep existing images by default
 
-    // Handle image upload if provided
-    let images = category.images; // Keep existing images
     if (req.files && req.files.length > 0) {
-      // Delete old images from Cloudinary
-      for (const image of images) {
-        await cloudinary.v2.uploader.destroy(image.public_id);
-      }
-
       const imagePromises = req.files.map(async (file) => {
         const fileData = await getDataUri(file);
         const cdb = await cloudinary.v2.uploader.upload(fileData.content);
@@ -146,41 +153,26 @@ const updateCategoryController = async (req, res) => {
         };
       });
 
-      // Upload new images and get their data
-      images = await Promise.all(imagePromises); // Replace old images with new ones
+      images = await Promise.all(imagePromises);
     }
 
-    // Update products with the new category name if changed
-    const products = await productModel.find({ category: category._id });
-    for (let product of products) {
-      if (updatedCategory) {
-        product.category = updatedCategory;
-        await product.save();
-      }
-    }
+    // Update category
+    await categoryModel.findByIdAndUpdate(
+      categoryId,
+      { category, images },
+      { new: true }
+    );
 
-    // Update category details
-    if (updatedCategory) category.category = updatedCategory;
-    category.images = images; // Update images
-
-    // Save
-    await category.save();
-    res.status(200).send({
+    return res.status(200).send({
       success: true,
-      message: "Category updated successfully",
+      message: `${category} category updated successfully`,
     });
   } catch (error) {
     console.error(error);
-    if (error.name === "CastError") {
-      return res.status(400).send({
-        success: false,
-        message: "Invalid ID",
-      });
-    }
-    res.status(500).send({
+    return res.status(500).send({
       success: false,
-      message: "Error In UPDATE Category API",
-      error: error.message,
+      message: "Error in Update Category API",
+      error: error.message, // Include error message for debugging
     });
   }
 };
