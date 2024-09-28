@@ -6,6 +6,7 @@ const {
   getAllCategoriesController,
   updateCategoryController,
 } = require("../controllers/categoryController.js");
+const { multipleUpload } = require("../middlewares/multer.js");
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ const router = express.Router();
 // ============== CAT ROUTES ==================
 
 // CREATE CATEGORY
-router.post("/create", isAuth, isAdmin, createCategory);
+router.post("/create", multipleUpload, isAuth, isAdmin, createCategory);
 
 // GET ALL CATEGORY
 router.get("/get-all", getAllCategoriesController);

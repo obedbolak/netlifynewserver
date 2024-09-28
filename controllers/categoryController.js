@@ -1,6 +1,7 @@
 const categoryModel = require("../models/categoryModel.js");
 const productModel = require("../models/productModel.js");
-
+const cloudinary = require("cloudinary");
+const { getDataUri } = require("../utils/Features.js");
 // CREATE CATEGORY
 const createCategory = async (req, res) => {
   try {
@@ -8,22 +9,40 @@ const createCategory = async (req, res) => {
 
     // Validation
     if (!category) {
-      return res.status(404).send({
+      return res.status(400).send({
         success: false,
         message: "Please provide category name",
       });
     }
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).send({
+        success: false,
+        message: "Please provide category image",
+      });
+    }
 
-    await categoryModel.create({ category });
-    res.status(201).send({
+    const imagePromises = req.files.map(async (file) => {
+      const fileData = await getDataUri(file); // Await if getDataUri returns a promise
+      const cdb = await cloudinary.v2.uploader.upload(fileData.content);
+      return {
+        public_id: cdb.public_id,
+        url: cdb.secure_url,
+      };
+    });
+
+    const images = await Promise.all(imagePromises);
+    await categoryModel.create({ category, images });
+
+    return res.status(201).send({
       success: true,
       message: `${category} category created successfully`,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
+    console.error(error);
+    return res.status(500).send({
       success: false,
       message: "Error In Create Category API",
+      error: error.message, // Include error message for debugging
     });
   }
 };
