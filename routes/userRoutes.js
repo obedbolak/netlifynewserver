@@ -38,6 +38,7 @@ router.put(
   multipleUpload,
   userController.updateProfileController
 );
+router.get("/admin-users", userController.fetchAdminUsersController);
 
 // UPDATE PROFILE PICTURE
 router.put(

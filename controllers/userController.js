@@ -290,7 +290,27 @@ const passwordResetController = async (req, res) => {
     });
   }
 };
+
+const fetchAdminUsersController = async (req, res) => {
+  try {
+    const adminUsers = await userModel.find({ role: "admin" });
+
+    res.status(200).send({
+      success: true,
+      message: "Admin users fetched successfully",
+      adminUsers,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error in fetching admin users",
+      error,
+    });
+  }
+};
 module.exports = {
+  fetchAdminUsersController,
   registerController,
   loginController,
   getUserProfileController,
